@@ -157,7 +157,6 @@ void setup() {
   // The LED pin needs to set HIGH
   // Use this pin to save energy
   // Turn on the background LED
-  Serial.println(TFT_LED);
   pinMode(TFT_LED, OUTPUT);
   digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
 
@@ -213,13 +212,19 @@ TS_Point points[10];
 uint8_t currentTouchPoint = 0;
 void loop() {
   gfx.fillBuffer(MINI_BLACK);
-  if (touchController.isTouched(0)) {
-    TS_Point p = touchController.getPoint();
-
-    if (p.y < 80) {
-      IS_STYLE_12HR = !IS_STYLE_12HR;
+  if (touchController.isTouched(300)) {
+    timerPress = millis();
+    if (digitalRead(TFT_LED) == LOW) {
+      digitalWrite(TFT_LED, HIGH);
     } else {
-      screen = (screen + 1) % screenCount;
+      digitalWrite(TFT_LED, HIGH);
+      TS_Point p = touchController.getPoint();
+
+      if (p.y < 80) {
+        IS_STYLE_12HR = !IS_STYLE_12HR;
+      } else {
+        screen = (screen + 1) % screenCount;
+      }
     }
   }
 
@@ -253,16 +258,11 @@ void loop() {
     lastDownloadUpdate = millis();
   }
 
-  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) { // after X seconds go to sleep
-    drawProgress(25, "Going to Sleep!");
-    delay(1000);
-    drawProgress(50, "Going to Sleep!");
-    delay(1000);
-    drawProgress(75, "Going to Sleep!");
-    delay(1000);
-    drawProgress(100, "Going to Sleep!");
-    // go to deepsleep for xx minutes or 0 = permanently
-    ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
+  // after X seconds go to sleep (unless X is zero)
+  if (SLEEP_INTERVAL_SECS &&
+      digalRead(TFT_LED) == HIGH &&
+      millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) {
+    digitalWrite(TFT_LED, LOW);    // LOW to Turn off;
   }
 }
 
