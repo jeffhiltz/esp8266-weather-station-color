@@ -1,3 +1,5 @@
+*This is a fork of ThingPulse's project*
+
 # ThingPulse ESP8266 Weather Station Color
 
 
