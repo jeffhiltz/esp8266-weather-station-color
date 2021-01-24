@@ -260,7 +260,7 @@ void loop() {
 
   // after X seconds go to sleep (unless X is zero)
   if (SLEEP_INTERVAL_SECS &&
-      digalRead(TFT_LED) == HIGH &&
+      digitalRead(TFT_LED) == HIGH &&
       millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) {
     digitalWrite(TFT_LED, LOW);    // LOW to Turn off;
   }
