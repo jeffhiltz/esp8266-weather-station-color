@@ -1,26 +1,26 @@
 /**The MIT License (MIT)
-Copyright (c) 2018 by Daniel Eichhorn
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-See more at https://blog.squix.org
+  Copyright (c) 2018 by Daniel Eichhorn
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+  See more at https://blog.squix.org
 */
 
 
 /*****************************
- * Important: see settings.h to configure your settings!!!
+   Important: see settings.h to configure your settings!!!
  * ***************************/
 #include "settings.h"
 
@@ -34,11 +34,11 @@ See more at https://blog.squix.org
 
 
 /***
- * Install the following libraries through Arduino Library Manager
- * - Mini Grafx by Daniel Eichhorn
- * - ESP8266 WeatherStation by Daniel Eichhorn
- * - Json Streaming Parser by Daniel Eichhorn
- * - simpleDSTadjust by neptune2
+   Install the following libraries through Arduino Library Manager
+   - Mini Grafx by Daniel Eichhorn
+   - ESP8266 WeatherStation by Daniel Eichhorn
+   - Json Streaming Parser by Daniel Eichhorn
+   - simpleDSTadjust by neptune2
  ***/
 
 #include <JsonListener.h>
@@ -55,8 +55,6 @@ See more at https://blog.squix.org
 #include "weathericons.h"
 
 
-
-
 #define MINI_BLACK 0
 #define MINI_WHITE 1
 #define MINI_YELLOW 2
@@ -67,9 +65,9 @@ See more at https://blog.squix.org
 // defines the colors usable in the paletted 16 color frame buffer
 uint16_t palette[] = {ILI9341_BLACK, // 0
                       ILI9341_WHITE, // 1
-                      ILI9341_YELLOW, // 2
-                      0x7E3C
-                      }; //3
+                      0xFE6C, // 2
+                      0x64B8 // 3
+                     };
 
 int SCREEN_WIDTH = 240;
 int SCREEN_HEIGHT = 320;
@@ -90,7 +88,7 @@ TouchControllerWS touchController(&ts);
 
 void calibrationCallback(int16_t x, int16_t y);
 CalibrationCallback calibration = &calibrationCallback;
-  
+
 
 OpenWeatherMapCurrentData currentWeather;
 OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
@@ -116,9 +114,10 @@ const char* getMeteoconIconFromProgmem(String iconText);
 const char* getMiniMeteoconIconFromProgmem(String iconText);
 void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
-void drawForecast3(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
-FrameCallback frames[] = { drawForecast1, drawForecast2, drawForecast3 };
-int frameCount = 3;
+// void drawForecast3(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
+// FrameCallback frames[] = { drawForecast1, drawForecast2, drawForecast3 };
+FrameCallback frames[] = { drawForecast1, drawForecast2 };
+int frameCount = 2;
 
 // how many different screens do we have?
 int screenCount = 5;
@@ -139,16 +138,16 @@ void connectWifi() {
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
   WiFi.hostname(WIFI_HOSTNAME);
-  WiFi.begin(WIFI_SSID,WIFI_PASS);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    if (i>80) i=0;
-    drawProgress(i,"Connecting to WiFi '" + String(WIFI_SSID) + "'");
-    i+=10;
+    if (i > 80) i = 0;
+    drawProgress(i, "Connecting to WiFi '" + String(WIFI_SSID) + "'");
+    i += 10;
     Serial.print(".");
   }
-  drawProgress(100,"Connected to WiFi '" + String(WIFI_SSID) + "'");
+  drawProgress(100, "Connected to WiFi '" + String(WIFI_SSID) + "'");
   Serial.print("Connected...");
 }
 
@@ -162,7 +161,7 @@ void setup() {
   pinMode(TFT_LED, OUTPUT);
   digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
 
-  
+
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
@@ -171,15 +170,16 @@ void setup() {
 
   Serial.println("Initializing touch screen...");
   ts.begin();
-  
+
   Serial.println("Mounting file system...");
   bool isFSMounted = SPIFFS.begin();
+
   if (!isFSMounted) {
     Serial.println("Formatting file system...");
-    drawProgress(50,"Formatting file system");
+    drawProgress(50, "Formatting file system");
     SPIFFS.format();
   }
-  drawProgress(100,"Formatting done");
+  drawProgress(100, "Formatting done");
   boolean isCalibrationAvailable = touchController.loadCalibration();
   if (!isCalibrationAvailable) {
     Serial.println("Calibration not available");
@@ -223,7 +223,7 @@ void loop() {
     }
   }
 
-  
+
   if (screen == 0) {
     drawTime();
     drawWifiQuality();
@@ -249,21 +249,21 @@ void loop() {
 
   // Check if we should update weather information
   if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
-      updateData();
-      lastDownloadUpdate = millis();
+    updateData();
+    lastDownloadUpdate = millis();
   }
 
-  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
-    drawProgress(25,"Going to Sleep!");
+  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) { // after X seconds go to sleep
+    drawProgress(25, "Going to Sleep!");
     delay(1000);
-    drawProgress(50,"Going to Sleep!");
+    drawProgress(50, "Going to Sleep!");
     delay(1000);
-    drawProgress(75,"Going to Sleep!");
-    delay(1000);    
-    drawProgress(100,"Going to Sleep!");
+    drawProgress(75, "Going to Sleep!");
+    delay(1000);
+    drawProgress(100, "Going to Sleep!");
     // go to deepsleep for xx minutes or 0 = permanently
     ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
-  }  
+  }
 }
 
 // Update the internet based information and update screen
@@ -275,7 +275,7 @@ void updateData() {
 
   drawProgress(10, "Updating time...");
   configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
-  while((now = time(nullptr)) < NTP_MIN_VALID_EPOCH) {
+  while ((now = time(nullptr)) < NTP_MIN_VALID_EPOCH) {
     Serial.print(".");
     delay(300);
   }
@@ -308,13 +308,13 @@ void updateData() {
   moonData = astronomy->calculateMoonData(now);
   moonData.phase = astronomy->calculateMoonPhase(now);
   delete astronomy;
-  astronomy = nullptr;  
-//https://github.com/ThingPulse/esp8266-weather-station/issues/144 prevents using this  
-//  // 'now' has to be UTC, lat/lng in degrees not raadians
-//  SunMoonCalc *smCalc = new SunMoonCalc(now - dstOffset, currentWeather.lat, currentWeather.lon);
-//  moonData = smCalc->calculateSunAndMoonData().moon;
-//  delete smCalc;
-//  smCalc = nullptr;
+  astronomy = nullptr;
+  //https://github.com/ThingPulse/esp8266-weather-station/issues/144 prevents using this
+  //  // 'now' has to be UTC, lat/lng in degrees not raadians
+  //  SunMoonCalc *smCalc = new SunMoonCalc(now - dstOffset, currentWeather.lat, currentWeather.lon);
+  //  moonData = smCalc->calculateSunAndMoonData().moon;
+  //  delete smCalc;
+  //  smCalc = nullptr;
   Serial.printf("Free mem: %d\n",  ESP.getFreeHeap());
 
   delay(1000);
@@ -356,10 +356,10 @@ void drawTime() {
   gfx.setFont(ArialRoundedMTBold_36);
 
   if (IS_STYLE_12HR) {
-    int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
-    sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
+    int hour = (timeinfo->tm_hour + 11) % 12 + 1; // take care of noon and midnight
+    sprintf(time_str, "%2d:%02d:%02d\n", hour, timeinfo->tm_min, timeinfo->tm_sec);
   } else {
-    sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    sprintf(time_str, "%02d:%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
   }
   gfx.drawString(120, 20, time_str);
 
@@ -367,7 +367,7 @@ void drawTime() {
   gfx.setFont(ArialMT_Plain_10);
   gfx.setColor(MINI_BLUE);
   if (IS_STYLE_12HR) {
-    sprintf(time_str, "%s\n%s", dstAbbrev, timeinfo->tm_hour>=12?"PM":"AM");
+    sprintf(time_str, "%s\n%s", dstAbbrev, timeinfo->tm_hour >= 12 ? "PM" : "AM");
   } else {
     sprintf(time_str, "%s", dstAbbrev);
   }
@@ -388,7 +388,7 @@ void drawCurrentWeather() {
   gfx.setFont(ArialRoundedMTBold_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-   
+
   gfx.drawString(220, 78, String(currentWeather.temp, 1) + (IS_METRIC ? "°C" : "°F"));
 
   gfx.setFont(ArialRoundedMTBold_14);
@@ -446,7 +446,7 @@ void drawAstronomy() {
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(120, 250, MOON_PHASES[moonData.phase]);
-  
+
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(5, 250, SUN_MOON_TEXT[0]);
@@ -508,19 +508,19 @@ void drawLabelValue(uint8_t line, String label, String value) {
 // converts the dBm to a range between 0 and 100%
 int8_t getWifiQuality() {
   int32_t dbm = WiFi.RSSI();
-  if(dbm <= -100) {
-      return 0;
-  } else if(dbm >= -50) {
-      return 100;
+  if (dbm <= -100) {
+    return 0;
+  } else if (dbm >= -50) {
+    return 100;
   } else {
-      return 2 * (dbm + 100);
+    return 2 * (dbm + 100);
   }
 }
 
 void drawWifiQuality() {
   int8_t quality = getWifiQuality();
   gfx.setColor(MINI_WHITE);
-  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);  
+  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.drawString(228, 9, String(quality) + "%");
   for (int8_t i = 0; i < 4; i++) {
     for (int8_t j = 0; j < 2 * (i + 1); j++) {
@@ -554,19 +554,19 @@ void drawForecastTable(uint8_t start) {
     struct tm * timeinfo = localtime (&time);
     gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
 
-   
+
     gfx.drawPalettedBitmapFromPgm(0, 15 + y, getMiniMeteoconIconFromProgmem(forecasts[i].icon));
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
     gfx.setColor(MINI_YELLOW);
     gfx.setFont(ArialRoundedMTBold_14);
     gfx.drawString(10, y, forecasts[i].main);
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-    
+
     gfx.setColor(MINI_BLUE);
     gfx.drawString(50, y, "T:");
     gfx.setColor(MINI_WHITE);
     gfx.drawString(70, y, String(forecasts[i].temp, 0) + degreeSign);
-    
+
     gfx.setColor(MINI_BLUE);
     gfx.drawString(50, y + 15, "H:");
     gfx.setColor(MINI_WHITE);
@@ -581,7 +581,7 @@ void drawForecastTable(uint8_t start) {
     gfx.drawString(130, y, "Pr:");
     gfx.setColor(MINI_WHITE);
     gfx.drawString(170, y, String(forecasts[i].pressure, 0) + "hPa");
-    
+
     gfx.setColor(MINI_BLUE);
     gfx.drawString(130, y + 15, "WSp:");
     gfx.setColor(MINI_WHITE);
@@ -606,11 +606,11 @@ void drawAbout() {
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  drawLabelValue(7, "Heap Mem:", String(ESP.getFreeHeap() / 1024)+"kb");
+  drawLabelValue(7, "Heap Mem:", String(ESP.getFreeHeap() / 1024) + "kb");
   drawLabelValue(8, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
   drawLabelValue(9, "WiFi Strength:", String(WiFi.RSSI()) + "dB");
   drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
-  drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
+  drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) + "V");
   drawLabelValue(12, "CPU Freq.: ", String(ESP.getCpuFreqMHz()) + "MHz");
   char time_str[15];
   const uint32_t millis_in_day = 1000 * 60 * 60 * 24;
@@ -635,7 +635,7 @@ void calibrationCallback(int16_t x, int16_t y) {
 
 String getTime(time_t *timestamp) {
   struct tm *timeInfo = gmtime(timestamp);
-  
+
   char buf[6];
   sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
   return String(buf);
